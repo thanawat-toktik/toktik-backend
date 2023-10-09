@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "toktik-backend"
+version = "0.1.0"
+description = "Backend"
+authors = ["Nawat Ngerncham <n.ngerncham@gmail.com>"]
+readme = "README.md"
+packages = [{include = "toktik_backend"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+Django = "^4.2.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
