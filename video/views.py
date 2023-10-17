@@ -22,10 +22,10 @@ class TestView(GenericAPIView):
 
 class UploadPresignedURLView(GenericAPIView):
     permission_classes = [
-        IsAuthenticated,
+        # IsAuthenticated,
     ]
 
-    def get(self, request):
+    def post(self, request):
         load_dotenv()
         s3 = boto3.client(
             "s3",
@@ -33,7 +33,7 @@ class UploadPresignedURLView(GenericAPIView):
             endpoint_url=os.environ.get("S3_RAW_ENDPOINT"),
             aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
             aws_secret_access_key=os.environ.get("S3_SECRET_ACCESS_KEY"),
-            config=Config(s3={"addressing_style": "virtual"}),
+            config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
         )
 
         try:
@@ -43,8 +43,9 @@ class UploadPresignedURLView(GenericAPIView):
                         ClientMethod="put_object",
                         Params={
                             "Bucket": os.environ.get("S3_BUCKET_NAME"),
-                            "Key": "Super awesome key",
+                            "Key": request.data["key"],
                         },
+                        ExpiresIn=300,
                     )
                 },
                 status=status.HTTP_200_OK,
