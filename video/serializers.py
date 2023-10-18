@@ -24,12 +24,6 @@ class CreateVideoSerializer(serializers.ModelSerializer):
                 detail="Video does not have title!", code=status.HTTP_403_FORBIDDEN
             )
 
-        caption = Video.objects.filter(caption=attrs.get("caption")).exists()
-        if caption:
-            raise ValidationError(
-                detail="Video does not have caption!", code=status.HTTP_403_FORBIDDEN
-            )
-
         s3_key = Video.objects.filter(s3_key=attrs.get("s3_key")).exists()
         if s3_key:
             raise ValidationError(
