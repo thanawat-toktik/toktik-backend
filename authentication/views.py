@@ -11,20 +11,23 @@ class UserCreateView(GenericAPIView):
     serializer_class = CreateUserSerializer
 
     def post(self, request):
+        print(request.data)
         data = request.data
         serializer = self.serializer_class(data=data)
         
-        if serializer.is_valid():
+        try:
+            serializer.is_valid()
             serializer.save()
             return Response(
                 data = serializer.data,
                 status=status.HTTP_201_CREATED
             )
-        else:
+        except Exception as e:
             return Response(
-                data = serializer.error,
+                data = {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
 
 # class UserViewSet(ModelViewSet):
 #     queryset = User.objects.all()
