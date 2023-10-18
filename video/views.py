@@ -9,6 +9,9 @@ from botocore.exceptions import ClientError
 import os
 from dotenv import load_dotenv
 
+from video.serializers import CreateVideoSerializer
+from video.models import Video
+
 
 class TestView(GenericAPIView):
     # add this to the endpoints that requires authen
@@ -52,3 +55,22 @@ class UploadPresignedURLView(GenericAPIView):
             )
         except ClientError as e:
             return Response(data={"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PutVideoInDB(GenericAPIView):
+    queryset = Video.objects.all()
+    serializer_class = CreateVideoSerializer
+
+    permission_classes = [
+        # IsAuthenticated,
+    ]
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
