@@ -32,8 +32,11 @@ class CreateVideoSerializer(serializers.ModelSerializer):
             )
 
         return super().validate(attrs)
+    def set_user(self, user):
+        self.uploader = user
 
     def create(self, validated_data):
         new_video = Video(**validated_data)
+        new_video.uploader = self.uploader
         new_video.save()
         return new_video
