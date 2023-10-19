@@ -3,19 +3,32 @@ from rest_framework import status
 from rest_framework import serializers
 
 from video.models import Video
+from django.contrib.auth.models import User
+from rest_framework import serializers
 
+
+class GeneralVideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(GeneralVideoSerializer, self).__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].required = False
+    
 
 class CreateVideoSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50, allow_blank=False)
     caption = serializers.CharField(max_length=100, allow_blank=True)
     s3_key = serializers.CharField(max_length=36, allow_blank=False)
 
-    created_at = serializers.DateTimeField(read_only=True)
-    upload_timestamp = serializers.DateTimeField(read_only=True)
+    # created_at = serializers.DateTimeField(read_only=True)
+    # upload_timestamp = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Video
-        fields = ["id", "created_at", "upload_timestamp", "s3_key", "title", "caption"]
+        fields = ["s3_key", "title", "caption"]
 
     def validate(self, attrs):
         title = Video.objects.filter(title=attrs.get("title")).exists()

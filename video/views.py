@@ -10,35 +10,43 @@ from botocore.exceptions import ClientError
 import os
 from dotenv import load_dotenv
 
-from video.serializers import CreateVideoSerializer
+from video.serializers import CreateVideoSerializer, GeneralVideoSerializer
 from video.models import Video
-
-
-class TestView(GenericAPIView):
-    # add this to the endpoints that requires authen
-    permission_classes = [
-        IsAuthenticated,
-    ]
-
-    def get(self, request):
-        return Response(data={"hello": "world"}, status=status.HTTP_200_OK)
 
 
 # https://stackoverflow.com/questions/21508982/add-custom-route-to-viewsets-modelviewset
 class VideoViewSet(viewsets.ViewSet):
     # -view --> descending view
     queryset = Video.objects.order_by('-view')
-    permission_classes = [
-        # IsAuthenticated,
-    ]
+    permission_classes = []
+    serializer_class = GeneralVideoSerializer
 
-    @action(detail=False, methods=['GET'])
+    #TODO: add pagination
+    @action(detail=True, methods=['GET'])
     def feed(self, request):
-        return Response(data={"hello": "world"}, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(data=self.queryset)
+
+        if serializer.is_valid():
+            serializer.set_user(request.user)
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
     
+    #TODO: add pagination
     @action(detail=False, methods=['GET'], url_path='my-video')
     def my_video(self, request):
-        return Response(data={"hello": "world"}, status=status.HTTP_200_OK)
+        user_id = request.user.id
+        data = self.queryset.filter(id=user_id)
+        serializer = self.serializer_class(data=data)
+
+        if serializer.is_valid():
+            serializer.set_user(request.user)
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['GET'], url_path='')
     def get_presigned(self, request, pk=None):
@@ -97,7 +105,11 @@ class PutVideoInDB(GenericAPIView):
     ]
 
     def post(self, request):
-        data = request.data
+        print(request.data)
+        print(request.user)
+        data = request.data.dict()
+        print(data.get('s3_key'))
+        print(len(data.get('s3_key')))
         serializer = self.serializer_class(data=data)
 
         if serializer.is_valid():
