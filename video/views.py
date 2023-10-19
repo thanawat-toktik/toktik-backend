@@ -7,7 +7,6 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
 import os
-from dotenv import load_dotenv
 
 from video.serializers import CreateVideoSerializer
 from video.models import Video
@@ -29,7 +28,6 @@ class UploadPresignedURLView(GenericAPIView):
     ]
 
     def post(self, request):
-        load_dotenv()
         s3 = boto3.client(
             "s3",
             region_name=os.environ.get("S3_REGION"),
