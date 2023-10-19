@@ -12,4 +12,4 @@ class Video(models.Model):
 
     title = models.CharField(max_length=50, default="")
     caption = models.CharField(max_length=100, blank=True)
-    s3_key = models.CharField(max_length=36, blank=False, unique=True, default="")
+    s3_key = models.CharField(max_length=45, blank=False, unique=True, default="")

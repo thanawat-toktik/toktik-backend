@@ -8,7 +8,7 @@ from video.models import Video
 class CreateVideoSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50, allow_blank=False)
     caption = serializers.CharField(max_length=100, allow_blank=True)
-    s3_key = serializers.CharField(max_length=36, allow_blank=False)
+    s3_key = serializers.CharField(max_length=45, allow_blank=False)
 
     created_at = serializers.DateTimeField(read_only=True)
     upload_timestamp = serializers.DateTimeField(read_only=True)
