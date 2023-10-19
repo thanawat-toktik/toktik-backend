@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-)6n1nuz!saa2-fe)hpxy@cf-uxmqsw!e#0$1u$kw!nr)tu(@fj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["backend"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",  # TODO: change this for production
@@ -92,15 +92,16 @@ WSGI_APPLICATION = "toktik_backend.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+import os
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "postgres",
-        "USER": "postgres",
-        "PASSWORD": "password",
-        "HOST": "127.0.0.1",  # TODO: change this
-        "PORT": "5432",
+        "NAME": os.environ.get("DATABASE_NAME"),
+        "USER": os.environ.get("DATABASE_USER"),
+        "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
+        "HOST": os.environ.get("DATABASE_HOST"),
+        "PORT": os.environ.get("DATABASE_PORT"),
     }
 }
 
