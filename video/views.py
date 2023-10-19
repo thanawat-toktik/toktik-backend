@@ -16,49 +16,60 @@ from video.models import Video
 
 # https://stackoverflow.com/questions/21508982/add-custom-route-to-viewsets-modelviewset
 class VideoViewSet(viewsets.ViewSet):
-    # -view --> descending view
-    queryset = Video.objects.order_by('-view')
+    queryset = Video.objects.all().order_by('-view') # -view --> descending view
     permission_classes = []
     serializer_class = GeneralVideoSerializer
 
     #TODO: add pagination
-    @action(detail=True, methods=['GET'])
+    @action(detail=False, methods=['GET'])
     def feed(self, request):
-        serializer = self.serializer_class(data=self.queryset)
-
-        if serializer.is_valid():
-            serializer.set_user(request.user)
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+        serializer = self.serializer_class(data=self.queryset, many=True)
+        serializer.is_valid() # dont actually need to check if valid
+        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
     
     #TODO: add pagination
     @action(detail=False, methods=['GET'], url_path='my-video')
     def my_video(self, request):
         user_id = request.user.id
-        data = self.queryset.filter(id=user_id)
-        serializer = self.serializer_class(data=data)
-
-        if serializer.is_valid():
-            serializer.set_user(request.user)
-            serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        data = self.queryset.filter(uploader_id=user_id).order_by('-upload_timestamp')
+        serializer = self.serializer_class(data=data, many=True)
+        serializer.is_valid()
+        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
     
+
     @action(detail=True, methods=['GET'], url_path='')
     def get_presigned(self, request, pk=None):
-        return Response(data={"hello": "world"}, status=status.HTTP_200_OK)
+        
+        if not pk:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        video = self.queryset.get(id=pk)
+        if not video:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        # s3 = boto3.client(
+        #     "s3",
+        #     region_name=os.environ.get("S3_REGION"),
+        #     endpoint_url=os.environ.get("S3_RAW_ENDPOINT"),
+        #     aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
+        #     aws_secret_access_key=os.environ.get("S3_SECRET_ACCESS_KEY"),
+        #     config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
+        # )
+        # url = s3.get_object(
+        #     Bucket=os.environ.get("S3_BUCKET_NAME"),
+        #     Key=video.s3_key
+        # )
+        url = 'google.com'
+        print(url)
+        return Response(data={"presigned_url": url}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['GET'])
     def thumbnails(self, request):
-        return Response(data={"hello": "world"}, status=status.HTTP_200_OK)
+        return Response(data={"message": "Thumbnailer not yet implemented"}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['PATCH'], url_path='view')
     def increment_view(self, request):
-        return Response(data={"hello": "world"}, status=status.HTTP_200_OK)
+        return Response(data={"message": "View Increment not yet implemented"}, status=status.HTTP_200_OK)
 
 
 
@@ -105,11 +116,7 @@ class PutVideoInDB(GenericAPIView):
     ]
 
     def post(self, request):
-        print(request.data)
-        print(request.user)
-        data = request.data.dict()
-        print(data.get('s3_key'))
-        print(len(data.get('s3_key')))
+        data = request.data
         serializer = self.serializer_class(data=data)
 
         if serializer.is_valid():

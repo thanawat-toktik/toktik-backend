@@ -5,6 +5,14 @@ from rest_framework import serializers
 
 from authentication.models import User
 
+class BasicUserInfoSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    username = serializers.CharField(max_length=40,allow_blank=False)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
 class CreateUserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(max_length=40,allow_blank=False)
     display_name = serializers.CharField(max_length=40,allow_blank=False)

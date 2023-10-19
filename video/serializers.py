@@ -1,31 +1,28 @@
 from django.forms import ValidationError
 from rest_framework import status
 from rest_framework import serializers
+from authentication.serializers import BasicUserInfoSerializer
 
 from video.models import Video
-from django.contrib.auth.models import User
 from rest_framework import serializers
 
-
 class GeneralVideoSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    uploader = BasicUserInfoSerializer(read_only=True, many=False)
+    upload_timestamp = serializers.DateTimeField()
+    title = serializers.CharField(max_length=50, allow_blank=False)
+    caption = serializers.CharField(max_length=100, allow_blank=True)
+    view = serializers.IntegerField()
+    isProcessed = serializers.BooleanField()
     class Meta:
-        model = User
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super(GeneralVideoSerializer, self).__init__(*args, **kwargs)
-        for field in self.fields:
-            self.fields[field].required = False
-    
+        model = Video
+        fields = ['id', 'uploader', 'upload_timestamp', 'title', 'caption', 'view', 'isProcessed']
 
 class CreateVideoSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50, allow_blank=False)
     caption = serializers.CharField(max_length=100, allow_blank=True)
     s3_key = serializers.CharField(max_length=45, allow_blank=False)
-
-    # created_at = serializers.DateTimeField(read_only=True)
-    # upload_timestamp = serializers.DateTimeField(read_only=True)
-
+    
     class Meta:
         model = Video
         fields = ["s3_key", "title", "caption"]
