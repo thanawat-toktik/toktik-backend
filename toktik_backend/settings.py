@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +29,7 @@ SECRET_KEY = "django-insecure-)6n1nuz!saa2-fe)hpxy@cf-uxmqsw!e#0$1u$kw!nr)tu(@fj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["backend"]
+ALLOWED_HOSTS = ["backend", "localhost"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",  # TODO: change this for production

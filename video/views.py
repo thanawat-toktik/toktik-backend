@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
+from dotenv import load_dotenv
 import os
 
 from video.serializers import CreateVideoSerializer
@@ -28,6 +29,7 @@ class UploadPresignedURLView(GenericAPIView):
     ]
 
     def post(self, request):
+        load_dotenv()
         s3 = boto3.client(
             "s3",
             region_name=os.environ.get("S3_REGION"),
