@@ -14,12 +14,22 @@ from video.serializers import CreateVideoSerializer, GeneralVideoSerializer
 from video.models import Video
 
 
+def get_s3_client():
+    return boto3.client(
+        "s3",
+        region_name=os.environ.get("S3_REGION"),
+        endpoint_url=os.environ.get("S3_RAW_ENDPOINT"),
+        aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
+        aws_secret_access_key=os.environ.get("S3_SECRET_ACCESS_KEY"),
+        config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
+    )
+
 # https://stackoverflow.com/questions/21508982/add-custom-route-to-viewsets-modelviewset
 class VideoViewSet(viewsets.ViewSet):
     queryset = Video.objects.all().order_by('-view') # -view --> descending view
     permission_classes = []
     serializer_class = GeneralVideoSerializer
-
+    
     #TODO: add pagination
     @action(detail=False, methods=['GET'])
     def feed(self, request):
@@ -47,16 +57,7 @@ class VideoViewSet(viewsets.ViewSet):
         if not video:
             return Response(status=status.HTTP_404_NOT_FOUND)
         
-        s3 = boto3.client(
-            "s3",
-            region_name=os.environ.get("S3_REGION"),
-            endpoint_url=os.environ.get("S3_RAW_ENDPOINT"),
-            aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
-            aws_secret_access_key=os.environ.get("S3_SECRET_ACCESS_KEY"),
-            config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
-        )
-        
-        url = s3.generate_presigned_url(
+        url = get_s3_client().generate_presigned_url(
             ClientMethod='get_object',
             Params={
                 'Bucket': os.environ.get("S3_BUCKET_NAME"),
@@ -70,6 +71,30 @@ class VideoViewSet(viewsets.ViewSet):
     
     @action(detail=False, methods=['GET'])
     def thumbnails(self, request):
+        ids = request.data.get('video_ids')
+        if not ids:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        videos = self.queryset.filter(id__in=ids)
+        if len(ids) != len(videos):
+            return Response(data={'message': 'One or more video not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        urls = []
+        try:
+            for video in videos:
+                url = get_s3_client().generate_presigned_url(
+                    ClientMethod='get_object',
+                    Params={
+                        # 'Bucket': os.environ.get("S3_BUCKET_NAME"), TODO: insert bucket name for thumbnail
+                        'Key': video.s3_key
+                    },
+                    ExpiresIn=300
+                )
+                urls.append(url)
+        except Exception as e:
+            print(e)
+            return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         return Response(data={"message": "Thumbnailer not yet implemented"}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['PATCH'], url_path='view')
@@ -85,14 +110,7 @@ class UploadPresignedURLView(GenericAPIView):
 
     def post(self, request):
         load_dotenv()
-        s3 = boto3.client(
-            "s3",
-            region_name=os.environ.get("S3_REGION"),
-            endpoint_url=os.environ.get("S3_RAW_ENDPOINT"),
-            aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
-            aws_secret_access_key=os.environ.get("S3_SECRET_ACCESS_KEY"),
-            config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
-        )
+        s3 = get_s3_client()
 
         try:
             return Response(
