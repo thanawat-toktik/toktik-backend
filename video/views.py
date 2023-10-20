@@ -7,8 +7,8 @@ from rest_framework.decorators import action
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
-import os
 from dotenv import load_dotenv
+import os
 
 from video.serializers import CreateVideoSerializer, GeneralVideoSerializer
 from video.models import Video

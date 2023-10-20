@@ -4,6 +4,7 @@ from django.contrib.auth.models import (
     BaseUserManager,
 )
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None):
         if not email:
@@ -26,11 +27,11 @@ class User(AbstractBaseUser):
 
     date_joined = models.DateTimeField(auto_now_add=True)
 
-    REQUIRED_FIELDS=['username','phone_number']
-    
+    REQUIRED_FIELDS = ['username', 'phone_number']
+
     # field to login with
-    USERNAME_FIELD='email'
-    
+    USERNAME_FIELD = 'email'
+
     objects = CustomUserManager()
 
     def __str__(self):
