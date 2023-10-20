@@ -1,21 +1,31 @@
 from django.forms import ValidationError
 from rest_framework import status
 from rest_framework import serializers
+from authentication.serializers import BasicUserInfoSerializer
 
 from video.models import Video
+from rest_framework import serializers
 
+class GeneralVideoSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    uploader = BasicUserInfoSerializer(read_only=True, many=False)
+    upload_timestamp = serializers.DateTimeField()
+    title = serializers.CharField(max_length=50, allow_blank=False)
+    caption = serializers.CharField(max_length=100, allow_blank=True)
+    view = serializers.IntegerField()
+    isProcessed = serializers.BooleanField()
+    class Meta:
+        model = Video
+        fields = ['id', 'uploader', 'upload_timestamp', 'title', 'caption', 'view', 'isProcessed']
 
 class CreateVideoSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50, allow_blank=False)
     caption = serializers.CharField(max_length=100, allow_blank=True)
     s3_key = serializers.CharField(max_length=45, allow_blank=False)
-
-    created_at = serializers.DateTimeField(read_only=True)
-    upload_timestamp = serializers.DateTimeField(read_only=True)
-
+    
     class Meta:
         model = Video
-        fields = ["id", "created_at", "upload_timestamp", "s3_key", "title", "caption"]
+        fields = ["s3_key", "title", "caption"]
 
     def validate(self, attrs):
         title = Video.objects.filter(title=attrs.get("title")).exists()
@@ -32,8 +42,11 @@ class CreateVideoSerializer(serializers.ModelSerializer):
             )
 
         return super().validate(attrs)
+    def set_user(self, user):
+        self.uploader = user
 
     def create(self, validated_data):
         new_video = Video(**validated_data)
+        new_video.uploader = self.uploader
         new_video.save()
         return new_video

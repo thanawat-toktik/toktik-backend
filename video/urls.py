@@ -1,9 +1,14 @@
 from django.urls import path
 
+from rest_framework.routers import DefaultRouter
+
 from . import views
 
+router = DefaultRouter()
+router.register('', views.VideoViewSet)
+
+
 urlpatterns = [
-    path("test/", views.TestView.as_view(), name="temp function"),
     path("update-db/", views.PutVideoInDB.as_view(), name="Update DB"),
     path(
         "upload-psurl/",
@@ -11,3 +16,4 @@ urlpatterns = [
         name="Generate Pre-signed URL",
     ),
 ]
+urlpatterns += router.urls
