@@ -47,20 +47,25 @@ class VideoViewSet(viewsets.ViewSet):
         if not video:
             return Response(status=status.HTTP_404_NOT_FOUND)
         
-        # s3 = boto3.client(
-        #     "s3",
-        #     region_name=os.environ.get("S3_REGION"),
-        #     endpoint_url=os.environ.get("S3_RAW_ENDPOINT"),
-        #     aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
-        #     aws_secret_access_key=os.environ.get("S3_SECRET_ACCESS_KEY"),
-        #     config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
-        # )
-        # url = s3.get_object(
-        #     Bucket=os.environ.get("S3_BUCKET_NAME"),
-        #     Key=video.s3_key
-        # )
-        url = 'google.com'
+        s3 = boto3.client(
+            "s3",
+            region_name=os.environ.get("S3_REGION"),
+            endpoint_url=os.environ.get("S3_RAW_ENDPOINT"),
+            aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
+            aws_secret_access_key=os.environ.get("S3_SECRET_ACCESS_KEY"),
+            config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
+        )
+        
+        url = s3.generate_presigned_url(
+            ClientMethod='get_object',
+            Params={
+                'Bucket': os.environ.get("S3_BUCKET_NAME"),
+                'Key': video.s3_key
+            },
+            ExpiresIn=300
+        )
         print(url)
+
         return Response(data={"presigned_url": url}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['GET'])
