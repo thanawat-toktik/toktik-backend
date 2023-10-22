@@ -1,3 +1,9 @@
+import socket
+import uuid
+import os
+import json
+
+from celery import Celery
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -8,7 +14,6 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
-import os
 
 from video.serializers import CreateVideoSerializer, GeneralVideoSerializer
 from video.models import Video
@@ -24,20 +29,21 @@ def get_s3_client():
         config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
     )
 
+
 # https://stackoverflow.com/questions/21508982/add-custom-route-to-viewsets-modelviewset
 class VideoViewSet(viewsets.ViewSet):
-    queryset = Video.objects.all().order_by('-view') # -view --> descending view
+    queryset = Video.objects.all().order_by('-view')  # -view --> descending view
     permission_classes = []
     serializer_class = GeneralVideoSerializer
-    
-    #TODO: add pagination
+
+    # TODO: add pagination
     @action(detail=False, methods=['GET'])
     def feed(self, request):
         serializer = self.serializer_class(data=self.queryset, many=True)
-        serializer.is_valid() # dont actually need to check if valid
+        serializer.is_valid()  # dont actually need to check if valid
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-    
-    #TODO: add pagination
+
+    # TODO: add pagination
     @action(detail=False, methods=['GET'], url_path='my-video')
     def my_video(self, request):
         user_id = request.user.id
@@ -45,18 +51,17 @@ class VideoViewSet(viewsets.ViewSet):
         serializer = self.serializer_class(data=data, many=True)
         serializer.is_valid()
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-    
 
     @action(detail=True, methods=['GET'], url_path='')
     def get_presigned(self, request, pk=None):
-        
+
         if not pk:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
         video = self.queryset.get(id=pk)
         if not video:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        
+
         url = get_s3_client().generate_presigned_url(
             ClientMethod='get_object',
             Params={
@@ -68,17 +73,17 @@ class VideoViewSet(viewsets.ViewSet):
         print(url)
 
         return Response(data={"presigned_url": url}, status=status.HTTP_200_OK)
-    
+
     @action(detail=False, methods=['GET'])
     def thumbnails(self, request):
         ids = request.data.get('video_ids')
         if not ids:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
         videos = self.queryset.filter(id__in=ids)
         if len(ids) != len(videos):
             return Response(data={'message': 'One or more video not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+
         urls = []
         try:
             for video in videos:
@@ -94,13 +99,12 @@ class VideoViewSet(viewsets.ViewSet):
         except Exception as e:
             print(e)
             return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
         return Response(data={"message": "Thumbnailer not yet implemented"}, status=status.HTTP_200_OK)
-    
+
     @action(detail=False, methods=['PATCH'], url_path='view')
     def increment_view(self, request):
         return Response(data={"message": "View Increment not yet implemented"}, status=status.HTTP_200_OK)
-
 
 
 class UploadPresignedURLView(GenericAPIView):
@@ -130,6 +134,42 @@ class UploadPresignedURLView(GenericAPIView):
             return Response(data={"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+def enqueue_conversion(object_name: str):
+    # conversion_exchange = Exchange("conversion", type="direct")
+    # conversion_queue = Queue("conversion", conversion_exchange, routing_key="conversion")
+    #
+    # args = (object_name,)
+    # task_id = uuid.uuid4()
+    # body = {
+    #     "message": json.dumps((args, {}, None)),
+    #     "application_headers": {
+    #         "lang": "py",
+    #         "task": "toktik_converter.main.do_conversion",
+    #         "argsrepr": repr(args),
+    #         "kwargsrepr": repr({}),
+    #         "origin": "@".join([str(os.getpid()), socket.gethostname()]),
+    #     },
+    #     "properties": {
+    #         'correlation_id': task_id,
+    #         'content_type': 'application/json',
+    #         'content_encoding': 'utf-8',
+    #     }
+    # }
+    # print(body)
+    #
+    # with Connection("amqp://guest:guest@localhost:5673") as conn:
+    #     producer = conn.Producer(serializer="json")
+    #     producer.publish(
+    #         body=body,
+    #         exchange=conversion_exchange,
+    #         routing_key="conversion",
+    #         declare=[conversion_queue],
+    #     )
+    app = Celery("converter", broker="amqp://guest:guest@localhost:5673")
+    app.send_task("toktik_converter.main.do_conversion", args=(object_name,))
+    return None
+
+
 class PutVideoInDB(GenericAPIView):
     queryset = Video.objects.all()
     serializer_class = CreateVideoSerializer
@@ -137,6 +177,11 @@ class PutVideoInDB(GenericAPIView):
     permission_classes = [
         # IsAuthenticated,
     ]
+
+    def get(self, request):
+        print(request)
+        enqueue_conversion("3ad73a59-d601-4597-856e-3833ba8f4dab.mp4")
+        return Response(status=status.HTTP_200_OK)
 
     def post(self, request):
         data = request.data
