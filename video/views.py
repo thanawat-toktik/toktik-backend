@@ -150,11 +150,6 @@ class PutVideoInDB(GenericAPIView):
         # IsAuthenticated,
     ]
 
-    def get(self, request):
-        print(request)
-        enqueue_conversion("IMG_6376_2.MOV")
-        return Response(status=status.HTTP_200_OK)
-
     def post(self, request):
         data = request.data
         serializer = self.serializer_class(data=data)
@@ -162,6 +157,7 @@ class PutVideoInDB(GenericAPIView):
         if serializer.is_valid():
             serializer.set_user(request.user)
             serializer.save()
+            enqueue_conversion(data["s3_key"])
             return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
