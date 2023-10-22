@@ -1,7 +1,4 @@
-import socket
-import uuid
 import os
-import json
 
 from celery import Celery
 from rest_framework import status, viewsets
