@@ -132,38 +132,13 @@ class UploadPresignedURLView(GenericAPIView):
 
 
 def enqueue_conversion(object_name: str):
-    # conversion_exchange = Exchange("conversion", type="direct")
-    # conversion_queue = Queue("conversion", conversion_exchange, routing_key="conversion")
-    #
-    # args = (object_name,)
-    # task_id = uuid.uuid4()
-    # body = {
-    #     "message": json.dumps((args, {}, None)),
-    #     "application_headers": {
-    #         "lang": "py",
-    #         "task": "toktik_converter.main.do_conversion",
-    #         "argsrepr": repr(args),
-    #         "kwargsrepr": repr({}),
-    #         "origin": "@".join([str(os.getpid()), socket.gethostname()]),
-    #     },
-    #     "properties": {
-    #         'correlation_id': task_id,
-    #         'content_type': 'application/json',
-    #         'content_encoding': 'utf-8',
-    #     }
-    # }
-    # print(body)
-    #
-    # with Connection("amqp://guest:guest@localhost:5673") as conn:
-    #     producer = conn.Producer(serializer="json")
-    #     producer.publish(
-    #         body=body,
-    #         exchange=conversion_exchange,
-    #         routing_key="conversion",
-    #         declare=[conversion_queue],
-    #     )
-    app = Celery("converter", broker="amqp://guest:guest@localhost:5673")
-    app.send_task("toktik_converter.main.do_conversion", args=(object_name,))
+    load_dotenv()
+    celery = Celery("converter", broker=f"amqp://"
+                                        f"{os.environ.get('MQ_USERNAME', 'guest')}"
+                                        f":{os.environ.get('MQ_PASSWORD', 'guest')}"
+                                        f"@{os.environ.get('MQ_HOSTNAME', 'localhost')}"
+                                        f":{os.environ.get('MQ_PORT', '5673')}")  # note that default is 5673 not 5672
+    celery.send_task("toktik_converter.tasks.do_conversion", args=(object_name,))
     return None
 
 
@@ -177,7 +152,7 @@ class PutVideoInDB(GenericAPIView):
 
     def get(self, request):
         print(request)
-        enqueue_conversion("3ad73a59-d601-4597-856e-3833ba8f4dab.mp4")
+        enqueue_conversion("IMG_6376_2.MOV")
         return Response(status=status.HTTP_200_OK)
 
     def post(self, request):
