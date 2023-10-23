@@ -62,7 +62,7 @@ class VideoViewSet(viewsets.ViewSet):
         url = get_s3_client().generate_presigned_url(
             ClientMethod='get_object',
             Params={
-                'Bucket': os.environ.get("S3_BUCKET_NAME"),
+                'Bucket': os.environ.get("S3_BUCKET_NAME_RAW"),
                 'Key': video.s3_key
             },
             ExpiresIn=300
@@ -87,7 +87,7 @@ class VideoViewSet(viewsets.ViewSet):
                 url = get_s3_client().generate_presigned_url(
                     ClientMethod='get_object',
                     Params={
-                        # 'Bucket': os.environ.get("S3_BUCKET_NAME"), TODO: insert bucket name for thumbnail
+                        'Bucket': os.environ.get("S3_BUCKET_NAME_THUMBNAIL"),
                         'Key': video.s3_key
                     },
                     ExpiresIn=300
@@ -117,7 +117,7 @@ class UploadPresignedURLView(GenericAPIView):
                     "url": get_s3_client().generate_presigned_url(
                         ClientMethod="put_object",
                         Params={
-                            "Bucket": os.environ.get("S3_BUCKET_NAME"),
+                            "Bucket": os.environ.get("S3_BUCKET_NAME_RAW"),
                             "Key": request.data["key"],
                         },
                         ExpiresIn=300,
