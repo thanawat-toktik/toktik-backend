@@ -131,16 +131,13 @@ class UploadPresignedURLView(GenericAPIView):
 
 def get_celery_app():
     internal_app = Celery("converter",
-                          broker=f"amqp://"
-                                 f"{os.environ.get('MQ_USERNAME', 'guest')}"
-                                 f":{os.environ.get('MQ_PASSWORD', 'guest')}"
-                                 f"@{os.environ.get('MQ_HOSTNAME', 'localhost')}"
-                                 f":{os.environ.get('MQ_PORT', '5673')}",
+                          broker=f"redis://"
+                                 f"{os.environ.get('REDIS_HOSTNAME', 'localhost')}"
+                                 f":{os.environ.get('REDIS_PORT', '6381')}",
                           backend=f"redis://"
                                   f"{os.environ.get('REDIS_HOSTNAME', 'localhost')}"
-                                  f"{os.environ.get('REDIS_PORT', '6381')}",
+                                  f":{os.environ.get('REDIS_PORT', '6381')}",
                           broker_connection_retry_on_startup=True)
-
     return internal_app
 
 
