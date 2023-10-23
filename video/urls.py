@@ -7,7 +7,6 @@ from . import views
 router = DefaultRouter()
 router.register('', views.VideoViewSet)
 
-
 urlpatterns = [
     path("update-db/", views.PutVideoInDB.as_view(), name="Update DB"),
     path(
@@ -15,5 +14,6 @@ urlpatterns = [
         views.UploadPresignedURLView.as_view(),
         name="Generate Pre-signed URL",
     ),
+    path("check-queue/", views.UpdateProcessedVideoInDBView.as_view(), name="Check Queue"),
 ]
 urlpatterns += router.urls

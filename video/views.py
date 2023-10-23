@@ -111,12 +111,10 @@ class UploadPresignedURLView(GenericAPIView):
 
     def post(self, request):
         load_dotenv()
-        s3 = get_s3_client()
-
         try:
             return Response(
                 data={
-                    "url": s3.generate_presigned_url(
+                    "url": get_s3_client().generate_presigned_url(
                         ClientMethod="put_object",
                         Params={
                             "Bucket": os.environ.get("S3_BUCKET_NAME"),
@@ -131,14 +129,26 @@ class UploadPresignedURLView(GenericAPIView):
             return Response(data={"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+def get_celery_app():
+    internal_app = Celery("converter",
+                          broker=f"amqp://"
+                                 f"{os.environ.get('MQ_USERNAME', 'guest')}"
+                                 f":{os.environ.get('MQ_PASSWORD', 'guest')}"
+                                 f"@{os.environ.get('MQ_HOSTNAME', 'localhost')}"
+                                 f":{os.environ.get('MQ_PORT', '5673')}",
+                          backend=f"redis://"
+                                  f"{os.environ.get('REDIS_HOSTNAME', 'localhost')}"
+                                  f"{os.environ.get('REDIS_PORT', '6381')}",
+                          broker_connection_retry_on_startup=True)
+
+    return internal_app
+
+
 def enqueue_conversion(object_name: str):
     load_dotenv()
-    celery = Celery("converter", broker=f"amqp://"
-                                        f"{os.environ.get('MQ_USERNAME', 'guest')}"
-                                        f":{os.environ.get('MQ_PASSWORD', 'guest')}"
-                                        f"@{os.environ.get('MQ_HOSTNAME', 'localhost')}"
-                                        f":{os.environ.get('MQ_PORT', '5673')}")  # note that default is 5673 not 5672
-    celery.send_task("toktik_converter.tasks.do_conversion", args=(object_name,))
+    identifier, _ = os.path.splitext(object_name)
+    celery = get_celery_app()
+    celery.send_task("toktik_converter.tasks.do_conversion", args=(object_name,), task_id=identifier)
     return None
 
 
@@ -161,3 +171,16 @@ class PutVideoInDB(GenericAPIView):
             return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class UpdateProcessedVideoInDBView(GenericAPIView):
+    def get(self, _):
+        app = get_celery_app()
+        unprocessed_videos = Video.objects.filter(isProcessed=False)
+        for video in unprocessed_videos:
+            task_id, _ = os.path.splitext(video.s3_key)
+            async_result = app.AsyncResult(task_id)
+            if async_result.ready() and async_result.get():
+                video.isProcessed = True
+                video.save()
+        return Response(status=status.HTTP_200_OK)
