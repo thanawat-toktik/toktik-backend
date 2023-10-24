@@ -36,7 +36,7 @@ def get_s3_client():
 # https://stackoverflow.com/questions/21508982/add-custom-route-to-viewsets-modelviewset
 class VideoViewSet(viewsets.ViewSet):
     queryset = Video.objects.all().order_by('-view')  # -view --> descending view
-    permission_classes = [IsAuthenticated,]
+    # permission_classes = [IsAuthenticated,]
     serializer_class = GeneralVideoSerializer
 
     # TODO: add pagination
@@ -64,7 +64,6 @@ class GetPresignedURLView(GenericAPIView):
     queryset = Video.objects.all()
 
     def post(self, request):
-        print(request.data)
         # payload validation
         target_bucket = request.data.get('bucket', None)
         ids = request.data.get('video_ids')
@@ -72,11 +71,14 @@ class GetPresignedURLView(GenericAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # video id validation
-        videos = self.queryset.filter(id__in=ids)
+        videos = self.queryset.filter(id__in=ids) # currently, the ids are str, but it works
         if not videos: # no match
             return Response(status=status.HTTP_404_NOT_FOUND)
         
-        urls = dict()
+        urls = {
+            "video_ids": [],
+            "urls": []
+        }
         try:
             for video in videos:
                 url = get_s3_client().generate_presigned_url(
@@ -87,7 +89,8 @@ class GetPresignedURLView(GenericAPIView):
                     },
                     ExpiresIn=300
                 )
-                urls[video.id] = url
+                urls["video_ids"].append(video.id)
+                urls["urls"].append(url)
             
             return Response(data=urls, status=status.HTTP_200_OK)
         
