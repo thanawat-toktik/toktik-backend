@@ -15,5 +15,6 @@ urlpatterns = [
         name="Generate Pre-signed URL",
     ),
     path("check-queue/", views.UpdateProcessedVideoInDBView.as_view(), name="Check Queue"),
+    path("get-url/", views.GetPresignedURLView.as_view(), name="Get presigned url"),
 ]
 urlpatterns += router.urls
