@@ -15,6 +15,12 @@ from dotenv import load_dotenv
 from video.serializers import CreateVideoSerializer, GeneralVideoSerializer
 from video.models import Video
 
+BUCKET_NAMES = {
+    "raw": os.environ.get("S3_BUCKET_NAME_RAW"),
+    "converted": os.environ.get("S3_BUCKET_NAME_CONVERTED"),
+    "chunked": os.environ.get("S3_BUCKET_NAME_CHUNKED"),
+    "thumbnail": os.environ.get("S3_BUCKET_NAME_THUMBNAIL"),
+}
 
 def get_s3_client():
     return boto3.client(
@@ -30,7 +36,7 @@ def get_s3_client():
 # https://stackoverflow.com/questions/21508982/add-custom-route-to-viewsets-modelviewset
 class VideoViewSet(viewsets.ViewSet):
     queryset = Video.objects.all().order_by('-view')  # -view --> descending view
-    permission_classes = []
+    permission_classes = [IsAuthenticated,]
     serializer_class = GeneralVideoSerializer
 
     # TODO: add pagination
@@ -49,59 +55,45 @@ class VideoViewSet(viewsets.ViewSet):
         serializer.is_valid()
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['GET'], url_path='')
-    def get_presigned(self, request, pk=None):
+    @action(detail=False, methods=['PATCH'], url_path='view')
+    def increment_view(self, request):
+        return Response(data={"message": "View Increment not yet implemented"}, status=status.HTTP_200_OK)
 
-        if not pk:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        video = self.queryset.get(id=pk)
-        if not video:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+class GetPresignedURLView(GenericAPIView):
+    queryset = Video.objects.all()
 
-        url = get_s3_client().generate_presigned_url(
-            ClientMethod='get_object',
-            Params={
-                'Bucket': os.environ.get("S3_BUCKET_NAME_RAW"),
-                'Key': video.s3_key
-            },
-            ExpiresIn=300
-        )
-        print(url)
-
-        return Response(data={"presigned_url": url}, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['GET'])
-    def thumbnails(self, request):
+    def post(self, request):
+        print(request.data)
+        # payload validation
+        target_bucket = request.data.get('bucket', None)
         ids = request.data.get('video_ids')
-        if not ids:
+        if not target_bucket or not ids:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        # video id validation
         videos = self.queryset.filter(id__in=ids)
-        if len(ids) != len(videos):
-            return Response(data={'message': 'One or more video not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        urls = []
+        if not videos: # no match
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        urls = dict()
         try:
             for video in videos:
                 url = get_s3_client().generate_presigned_url(
                     ClientMethod='get_object',
                     Params={
-                        'Bucket': os.environ.get("S3_BUCKET_NAME_THUMBNAIL"),
+                        'Bucket': target_bucket,
                         'Key': video.s3_key
                     },
                     ExpiresIn=300
                 )
-                urls.append(url)
+                urls[video.id] = url
+            
+            return Response(data=urls, status=status.HTTP_200_OK)
+        
         except Exception as e:
             print(e)
             return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response(data={"message": "Thumbnailer not yet implemented"}, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['PATCH'], url_path='view')
-    def increment_view(self, request):
-        return Response(data={"message": "View Increment not yet implemented"}, status=status.HTTP_200_OK)
 
 
 class UploadPresignedURLView(GenericAPIView):
