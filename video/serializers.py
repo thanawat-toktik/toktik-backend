@@ -6,6 +6,7 @@ from authentication.serializers import BasicUserInfoSerializer
 from video.models import Video
 from rest_framework import serializers
 
+
 class GeneralVideoSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     uploader = BasicUserInfoSerializer(read_only=True, many=False)
@@ -14,34 +15,31 @@ class GeneralVideoSerializer(serializers.ModelSerializer):
     caption = serializers.CharField(max_length=100, allow_blank=True)
     view = serializers.IntegerField()
     isProcessed = serializers.BooleanField()
+
     class Meta:
         model = Video
         fields = ['id', 'uploader', 'upload_timestamp', 'title', 'caption', 'view', 'isProcessed']
+
 
 class CreateVideoSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50, allow_blank=False)
     caption = serializers.CharField(max_length=100, allow_blank=True)
     s3_key = serializers.CharField(max_length=45, allow_blank=False)
-    
+
     class Meta:
         model = Video
         fields = ["s3_key", "title", "caption"]
 
     def validate(self, attrs):
-        title = Video.objects.filter(title=attrs.get("title")).exists()
-        if title:
-            raise ValidationError(
-                detail="Video does not have title!", code=status.HTTP_403_FORBIDDEN
-            )
-
         s3_key = Video.objects.filter(s3_key=attrs.get("s3_key")).exists()
         if s3_key:
             raise ValidationError(
-                detail="Video does not have S3 key to its object!",
+                message="Video does not have S3 key to its object!",
                 code=status.HTTP_403_FORBIDDEN,
             )
 
         return super().validate(attrs)
+
     def set_user(self, user):
         self.uploader = user
 
