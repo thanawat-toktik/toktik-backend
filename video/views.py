@@ -22,6 +22,7 @@ BUCKET_NAMES = {
     "thumbnail": os.environ.get("S3_BUCKET_NAME_THUMBNAIL"),
 }
 
+
 def get_s3_client():
     return boto3.client(
         "s3",
@@ -71,10 +72,10 @@ class GetPresignedURLView(GenericAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # video id validation
-        videos = self.queryset.filter(id__in=ids) # currently, the ids are str, but it works
-        if not videos: # no match
+        videos = self.queryset.filter(id__in=ids)  # currently, the ids are str, but it works
+        if not videos:  # no match
             return Response(status=status.HTTP_404_NOT_FOUND)
-        
+
         urls = {
             "video_ids": [],
             "urls": []
@@ -91,9 +92,9 @@ class GetPresignedURLView(GenericAPIView):
                 )
                 urls["video_ids"].append(video.id)
                 urls["urls"].append(url)
-            
+
             return Response(data=urls, status=status.HTTP_200_OK)
-        
+
         except Exception as e:
             print(e)
             return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -128,10 +129,12 @@ def get_celery_app():
     internal_app = Celery("converter",
                           broker=f"redis://"
                                  f"{os.environ.get('REDIS_HOSTNAME', 'localhost')}"
-                                 f":{os.environ.get('REDIS_PORT', '6381')}",
+                                 f":{os.environ.get('REDIS_PORT', '6381')}"
+                                 f"/0",
                           backend=f"redis://"
                                   f"{os.environ.get('REDIS_HOSTNAME', 'localhost')}"
-                                  f":{os.environ.get('REDIS_PORT', '6381')}",
+                                  f":{os.environ.get('REDIS_PORT', '6381')}"
+                                  f"/0",
                           broker_connection_retry_on_startup=True)
     return internal_app
 
