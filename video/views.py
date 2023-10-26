@@ -1,6 +1,5 @@
 import os
 
-from celery import Celery
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
@@ -12,7 +11,7 @@ from botocore.client import Config
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
-from video.serializers import CreateVideoSerializer, GeneralVideoSerializer
+from video.serializers import GeneralVideoSerializer
 from video.models import Video
 
 BUCKET_NAMES = {
@@ -124,58 +123,3 @@ class UploadPresignedURLView(GenericAPIView):
         except ClientError as e:
             return Response(data={"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-def get_celery_app():
-    internal_app = Celery("converter",
-                          broker=f"redis://"
-                                 f"{os.environ.get('REDIS_HOSTNAME', 'localhost')}"
-                                 f":{os.environ.get('REDIS_PORT', '6381')}"
-                                 f"/0",
-                          backend=f"redis://"
-                                  f"{os.environ.get('REDIS_HOSTNAME', 'localhost')}"
-                                  f":{os.environ.get('REDIS_PORT', '6381')}"
-                                  f"/0",
-                          broker_connection_retry_on_startup=True)
-    return internal_app
-
-
-def enqueue_conversion(object_name: str):
-    load_dotenv()
-    identifier, _ = os.path.splitext(object_name)
-    celery = get_celery_app()
-    celery.send_task("toktik_converter.tasks.do_conversion", args=(object_name,), task_id=identifier)
-    return None
-
-
-class PutVideoInDB(GenericAPIView):
-    queryset = Video.objects.all()
-    serializer_class = CreateVideoSerializer
-
-    permission_classes = [
-        # IsAuthenticated,
-    ]
-
-    def post(self, request):
-        data = request.data
-        serializer = self.serializer_class(data=data)
-
-        if serializer.is_valid():
-            serializer.set_user(request.user)
-            serializer.save()
-            enqueue_conversion(data["s3_key"])
-            return Response(status=status.HTTP_201_CREATED)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-class UpdateProcessedVideoInDBView(GenericAPIView):
-    def get(self, _):
-        app = get_celery_app()
-        unprocessed_videos = Video.objects.filter(isProcessed=False)
-        for video in unprocessed_videos:
-            task_id, _ = os.path.splitext(video.s3_key)
-            async_result = app.AsyncResult(task_id)
-            if async_result.ready() and async_result.get():
-                video.isProcessed = True
-                video.save()
-        return Response(status=status.HTTP_200_OK)

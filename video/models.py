@@ -13,4 +13,7 @@ class Video(models.Model):
     caption = models.CharField(max_length=100, blank=True)
     s3_key = models.CharField(max_length=45, blank=False, unique=True, default="")
     view = models.IntegerField(default=0)
-    isProcessed = models.BooleanField(default=False)
+    isConverted = models.BooleanField(default=False)
+    isChunked = models.BooleanField(default=False)
+    hasThumbnail = models.BooleanField(default=False)
+    status = models.CharField(max_length=50, default="processing")
