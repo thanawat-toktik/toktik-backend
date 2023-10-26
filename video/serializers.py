@@ -14,11 +14,13 @@ class GeneralVideoSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50, allow_blank=False)
     caption = serializers.CharField(max_length=100, allow_blank=True)
     view = serializers.IntegerField()
-    isProcessed = serializers.BooleanField()
+    isConverted = serializers.BooleanField()
+    isChunked = serializers.BooleanField()
+    hasThumbnail = serializers.BooleanField()
 
     class Meta:
         model = Video
-        fields = ['id', 'uploader', 'upload_timestamp', 'title', 'caption', 'view', 'isProcessed']
+        fields = ['id', 'uploader', 'upload_timestamp', 'title', 'caption', 'view', 'isConverted', 'isChunked', 'hasThumbnail']
 
 
 class CreateVideoSerializer(serializers.ModelSerializer):
