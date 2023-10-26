@@ -16,3 +16,4 @@ class Video(models.Model):
     isConverted = models.BooleanField(default=False)
     isChunked = models.BooleanField(default=False)
     hasThumbnail = models.BooleanField(default=False)
+    status = models.CharField(max_length=50, default="processing")
