@@ -66,13 +66,37 @@ class PutVideoInDB(GenericAPIView):
 # (triggered by scheduler)
 # - sets flags to true according to status
 # - sends a message to msg queue
+def update_video(video: Video, task_result: bool, task_id: str):
+    step = int(video.isConverted) + int(video.isChunked) + int(video.hasThumbnail)
+    if not task_result: # if something fails
+        if ("processing" in video.status):
+            video.status = "retrying"
+            enqueue_task(task_id, step)
+        else:
+            video.status = "failed"
+    else: # successfully performed the previous step
+        video.status = "processing"
+        if step == 0:
+            video.isConverted = True
+            enqueue_task(task_id, 1)
+        elif step == 1:
+            video.isChunked = True
+            enqueue_task(task_id, 2)
+        else:
+            video.hasThumbnail = True
+            video.status = "done"
+    video.save()
+
 class UpdateProcessedVideoInDBView(GenericAPIView):
     def get(self, _):
         app = get_celery_app()
 
         # get videos that are not done & not failed
         dispatched_videos = Video.objects.exclude(status__in=["done", "failed"])
+        counter = 0
         for video in dispatched_videos:
+            if counter > 20:
+                break
             # get video info
             task_id, _ = os.path.splitext(video.s3_key)
             async_result = app.AsyncResult(task_id)
@@ -80,23 +104,6 @@ class UpdateProcessedVideoInDBView(GenericAPIView):
             if not async_result.ready():
                 continue
             
-            step = int(video.isConverted) + int(video.isChunked) + int(video.hasThumbnail)
-            if not async_result.get(): # if something fails
-                if ("processing" in video.status):
-                    video.status = "retrying"
-                    enqueue_task(task_id, step)
-                else:
-                    video.status = "failed"
-            else: # successfully performed the previous step
-                video.status = "processing"
-                if step == 0:
-                    video.isConverted = True
-                    enqueue_task(task_id, 1)
-                elif step == 1:
-                    video.isChunked = True
-                    enqueue_task(task_id, 2)
-                else:
-                    video.hasThumbnail = True
-                    video.status = "done"
-            video.save()
+            update_video(video, async_result.get(), task_id)
+            counter += 1
         return Response(status=status.HTTP_200_OK)
