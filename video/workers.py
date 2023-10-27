@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from video.serializers import CreateVideoSerializer
 from video.models import Video
 
-def get_celery_app(channel_number=0):
+def get_celery_app(channel_number: int):
     internal_app = Celery("converter",
                           broker=f"redis://"
                                  f"{os.environ.get('REDIS_HOSTNAME', 'localhost')}"
@@ -35,6 +35,8 @@ def enqueue_task(object_name: str, channel: int):
     identifier, _ = os.path.splitext(object_name)
     celery = get_celery_app(channel)
     celery.send_task(TASKS.get(channel), args=(object_name,), task_id=identifier)
+    print(f"SENT TASK WITH ID: [{identifier}]")
+    print(f"SENT TO CHANNEL: [{channel}]")
     return None
 
 # step 1 
@@ -66,44 +68,52 @@ class PutVideoInDB(GenericAPIView):
 # (triggered by scheduler)
 # - sets flags to true according to status
 # - sends a message to msg queue
-def update_video(video: Video, task_result: bool, task_id: str):
-    step = int(video.isConverted) + int(video.isChunked) + int(video.hasThumbnail)
+def update_video(video: Video, task_result: bool, step: int):
+    # print("before")
+    # print(step)
+    # print(task_result)
+    # print(video.__dict__)
+
     if not task_result: # if something fails
         if ("processing" in video.status):
             video.status = "retrying"
-            enqueue_task(task_id, step)
+            enqueue_task(video.s3_key, step)
         else:
             video.status = "failed"
     else: # successfully performed the previous step
         video.status = "processing"
         if step == 0:
             video.isConverted = True
-            enqueue_task(task_id, 1)
+            enqueue_task(video.s3_key, 1)
         elif step == 1:
             video.isChunked = True
-            enqueue_task(task_id, 2)
+            enqueue_task(video.s3_key, 2)
         else:
             video.hasThumbnail = True
             video.status = "done"
     video.save()
+    
+    # print("after")
+    # print(video.__dict__)
 
 class UpdateProcessedVideoInDBView(GenericAPIView):
     def get(self, _):
-        app = get_celery_app()
-
         # get videos that are not done & not failed
         dispatched_videos = Video.objects.exclude(status__in=["done", "failed"])
         counter = 0
         for video in dispatched_videos:
             if counter > 20:
                 break
+            
+            # check state of the video
+            step = int(video.isConverted) + int(video.isChunked) + int(video.hasThumbnail)
             # get video info
             task_id, _ = os.path.splitext(video.s3_key)
-            async_result = app.AsyncResult(task_id)
+            async_result = get_celery_app(step).AsyncResult(task_id)
             # check status in MQ
             if not async_result.ready():
                 continue
             
-            update_video(video, async_result.get(), task_id)
+            update_video(video, async_result.get(), step)
             counter += 1
         return Response(status=status.HTTP_200_OK)

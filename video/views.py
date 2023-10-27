@@ -20,6 +20,11 @@ BUCKET_NAMES = {
     "chunked": os.environ.get("S3_BUCKET_NAME_CHUNKED"),
     "thumbnail": os.environ.get("S3_BUCKET_NAME_THUMBNAIL"),
 }
+FILE_EXTENSION = {
+    "converted": ".mp4",
+    "chunked": ".m3u8",
+    "thumbnail": ".jpg"
+}
 
 
 def get_s3_client():
@@ -43,7 +48,7 @@ class VideoViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'])
     def feed(self, request):
         # data = self.queryset.filter(status='done').order_by('-view')
-        data = self.queryset.order_by('-view')
+        data = self.queryset.filter(status='done').order_by('-view')
         serializer = self.serializer_class(data=data, many=True)
         serializer.is_valid()  # dont actually need to check if valid
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
@@ -83,11 +88,12 @@ class GetPresignedURLView(GenericAPIView):
         }
         try:
             for video in videos:
+                identifier, original_ext = os.path.splitext(video.s3_key)
                 url = get_s3_client().generate_presigned_url(
                     ClientMethod='get_object',
                     Params={
-                        'Bucket': target_bucket,
-                        'Key': video.s3_key
+                        'Bucket': BUCKET_NAMES.get(target_bucket),
+                        'Key': identifier + FILE_EXTENSION.get(target_bucket, f".{original_ext}")
                     },
                     ExpiresIn=300
                 )
