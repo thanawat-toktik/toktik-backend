@@ -432,6 +432,17 @@ files = [
 ]
 
 [[package]]
+name = "iso8601"
+version = "2.1.0"
+description = "Simple module to parse ISO 8601 dates"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "iso8601-2.1.0-py3-none-any.whl", hash = "sha256:aac4145c4dcb66ad8b648a02830f5e2ff6c24af20f4f482689be402db2429242"},
+    {file = "iso8601-2.1.0.tar.gz", hash = "sha256:6b1d3829ee8921c4301998c909f7829fa9ed3cbdac0d3b16af2d743aed1ba8df"},
+]
+
+[[package]]
 name = "jmespath"
 version = "1.0.1"
 description = "JSON Matching Expressions"
@@ -473,6 +484,20 @@ sqlalchemy = ["sqlalchemy (>=1.4.48,<2.1)"]
 sqs = ["boto3 (>=1.26.143)", "pycurl (>=7.43.0.5)", "urllib3 (>=1.26.16)"]
 yaml = ["PyYAML (>=3.10)"]
 zookeeper = ["kazoo (>=2.8.0)"]
+
+[[package]]
+name = "m3u8"
+version = "3.6.0"
+description = "Python m3u8 parser"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "m3u8-3.6.0-py3-none-any.whl", hash = "sha256:18c2fc2e4e0906e3a114bc3747d5e73db71aadc72c5d2863a3538dd07c2367ab"},
+    {file = "m3u8-3.6.0.tar.gz", hash = "sha256:d7f17e357e63f90400ae9804bcd193b8935fcca4eb18659aa94f1d7af3b36451"},
+]
+
+[package.dependencies]
+iso8601 = "*"
 
 [[package]]
 name = "packaging"
@@ -777,4 +802,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "5c154adf22d47d171494a75f6aba422679fa61d974a485edf83cf0f13636cf9f"
+content-hash = "a8dec4d05524b771c5ac5f6ee926c96a24b76fd696b941021a629ce9ad207e92"

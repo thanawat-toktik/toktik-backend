@@ -12,9 +12,9 @@ urlpatterns = [
     path(
         "upload-psurl/",
         views.UploadPresignedURLView.as_view(),
-        name="Generate Pre-signed URL",
+        name="Generate upload pre-signed URL",
     ),
-    path("get-url/", views.GetPresignedURLView.as_view(), name="Get presigned url"),
+    path("get-url/", views.GetPresignedURLView.as_view(), name="Generate view pre-signed url"),
 
     path("update-db/", workers.PutVideoInDB.as_view(), name="Update DB"),
     path("check-queue/", workers.UpdateProcessedVideoInDBView.as_view(), name="Check Queue"),
