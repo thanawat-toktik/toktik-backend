@@ -1,15 +1,18 @@
 import os
+import shutil
+from pathlib import Path
 
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
+
+import m3u8
 
 from video.serializers import GeneralVideoSerializer
 from video.models import Video
@@ -46,7 +49,7 @@ class VideoViewSet(viewsets.ViewSet):
 
     # TODO: add pagination
     @action(detail=False, methods=['GET'])
-    def feed(self, request):
+    def feed(self, _):
         # data = self.queryset.filter(status='done').order_by('-view')
         data = self.queryset.filter(status='done').order_by('-view')
         serializer = self.serializer_class(data=data, many=True)
@@ -70,6 +73,60 @@ class VideoViewSet(viewsets.ViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
+class GetPresignedPlaylistView(GenericAPIView):
+    queryset = Video.objects.all()
+
+    @staticmethod
+    def pre_sign_playlist(playlist_file: Path, file_name: str):
+        playlist = m3u8.load(str(playlist_file))
+        for segment in playlist.segments:
+            segment.uri = get_s3_client().generate_presigned_url(
+                ClientMethod='get_object',
+                Params={
+                    'Bucket': BUCKET_NAMES["chunked"],
+                    'Key': f"{file_name}/{segment.uri}",
+                },
+                ExpiresIn=120  # expires in 2 minutes
+            )
+        return playlist.dumps()
+
+    def get(self, request):
+        load_dotenv()
+
+        # payload validation
+        video_id = request.query_params.get('video_id', None)
+        if not video_id:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        # video id validation
+        video = self.queryset.filter(id=video_id).first()
+        if not video:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            file_name, extension = os.path.splitext(video.s3_key)
+            playlist_dir = Path("/tmp/" + file_name)
+            if not playlist_dir.exists():
+                os.mkdir(playlist_dir)
+
+            # download m3u8 file
+            playlist_file = playlist_dir / f"{file_name}.m3u8"
+            get_s3_client().download_file(
+                Bucket=BUCKET_NAMES["chunked"],
+                Key=f"{file_name}/{file_name}.m3u8",
+                Filename=playlist_file,
+            )
+
+            # returns the text content of the playlist
+            pre_signed_playlist = self.pre_sign_playlist(playlist_file, file_name)
+            shutil.rmtree(playlist_dir)
+            return Response(pre_signed_playlist, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(e)
+            return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class GetPresignedURLView(GenericAPIView):
     queryset = Video.objects.all()
 
@@ -81,6 +138,7 @@ class GetPresignedURLView(GenericAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # video id validation
+        print(ids)
         videos = self.queryset.filter(id__in=ids)  # currently, the ids are str, but it works
         if not videos:  # no match
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -133,4 +191,3 @@ class UploadPresignedURLView(GenericAPIView):
             )
         except ClientError as e:
             return Response(data={"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
