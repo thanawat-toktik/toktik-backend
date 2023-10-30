@@ -70,7 +70,7 @@ class VideoViewSet(viewsets.ViewSet):
         return Response(data={"message": "View Increment not yet implemented"}, status=status.HTTP_200_OK)
 
 
-class GetPresignedURLView(GenericAPIView):
+class GetPresignedPlaylistView(GenericAPIView):
     queryset = Video.objects.all()
 
     @staticmethod
@@ -123,41 +123,46 @@ class GetPresignedURLView(GenericAPIView):
             print(e)
             return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # def post(self, request):
-    #     # payload validation
-    #     target_bucket = request.data.get('bucket', None)
-    #     ids = request.data.get('video_ids').split(',')
-    #     if not target_bucket or not ids:
-    #         return Response(status=status.HTTP_400_BAD_REQUEST)
-    #
-    #     # video id validation
-    #     videos = self.queryset.filter(id__in=ids)  # currently, the ids are str, but it works
-    #     if not videos:  # no match
-    #         return Response(status=status.HTTP_404_NOT_FOUND)
-    #
-    #     urls = {
-    #         "video_ids": [],
-    #         "urls": []
-    #     }
-    #     try:
-    #         for video in videos:
-    #             identifier, original_ext = os.path.splitext(video.s3_key)
-    #             url = get_s3_client().generate_presigned_url(
-    #                 ClientMethod='get_object',
-    #                 Params={
-    #                     'Bucket': BUCKET_NAMES.get(target_bucket),
-    #                     'Key': identifier + FILE_EXTENSION.get(target_bucket, f".{original_ext}")
-    #                 },
-    #                 ExpiresIn=300
-    #             )
-    #             urls["video_ids"].append(video.id)
-    #             urls["urls"].append(url)
-    #
-    #         return Response(data=urls, status=status.HTTP_200_OK)
-    #
-    #     except Exception as e:
-    #         print(e)
-    #         return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class GetPresignedURLView(GenericAPIView):
+    queryset = Video.objects.all()
+
+    def post(self, request):
+        # payload validation
+        target_bucket = request.data.get('bucket', None)
+        ids = request.data.get('video_ids').split(',')
+        if not target_bucket or not ids:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        # video id validation
+        print(ids)
+        videos = self.queryset.filter(id__in=ids)  # currently, the ids are str, but it works
+        if not videos:  # no match
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        urls = {
+            "video_ids": [],
+            "urls": []
+        }
+        try:
+            for video in videos:
+                identifier, original_ext = os.path.splitext(video.s3_key)
+                url = get_s3_client().generate_presigned_url(
+                    ClientMethod='get_object',
+                    Params={
+                        'Bucket': BUCKET_NAMES.get(target_bucket),
+                        'Key': identifier + FILE_EXTENSION.get(target_bucket, f".{original_ext}")
+                    },
+                    ExpiresIn=300
+                )
+                urls["video_ids"].append(video.id)
+                urls["urls"].append(url)
+
+            return Response(data=urls, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(e)
+            return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UploadPresignedURLView(GenericAPIView):
