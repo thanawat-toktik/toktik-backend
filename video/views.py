@@ -66,7 +66,7 @@ class VideoViewSet(viewsets.ViewSet):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['GET'], url_path='view')
-    def increment_view(self, request, pk=None):
+    def increment_view(self, _, pk=None):
         video = self.queryset.get(id=pk)
         video.view += 1
         video.save()
@@ -99,12 +99,12 @@ class GetPresignedPlaylistView(GenericAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # video id validation
-        video = self.queryset.filter(id=video_id).first()
+        video = self.queryset.get(id=video_id)
         if not video:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         try:
-            file_name, extension = os.path.splitext(video.s3_key)
+            file_name, _ = os.path.splitext(video.s3_key)
             playlist_dir = Path("/tmp/" + file_name)
             if not playlist_dir.exists():
                 os.mkdir(playlist_dir)
