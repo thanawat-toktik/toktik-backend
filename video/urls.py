@@ -18,6 +18,5 @@ urlpatterns = [
     path("get-playlist/", views.GetPresignedPlaylistView.as_view(), name="Generate playlist pre-signed url"),
 
     path("update-db/", workers.PutVideoInDB.as_view(), name="Update DB"),
-    path("check-queue/", workers.UpdateProcessedVideoInDBView.as_view(), name="Check Queue"),
 ]
 urlpatterns += router.urls

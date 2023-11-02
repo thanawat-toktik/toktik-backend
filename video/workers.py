@@ -98,12 +98,8 @@ def update_video(video: Video, task_result: bool, step: int):
 class UpdateProcessedVideoInDBView(GenericAPIView):
     def get(self, _):
         # get videos that are not done & not failed
-        dispatched_videos = Video.objects.exclude(status__in=["done", "failed"])
-        counter = 0
+        dispatched_videos = Video.objects.exclude(status__in=["done", "failed"])[:20]
         for video in dispatched_videos:
-            if counter > 20:
-                break
-
             # check state of the video
             step = int(video.isConverted) + int(video.isChunked) + int(video.hasThumbnail)
             # get video info
@@ -114,5 +110,4 @@ class UpdateProcessedVideoInDBView(GenericAPIView):
                 continue
 
             update_video(video, async_result.get(), step)
-            counter += 1
         return Response(status=status.HTTP_200_OK)

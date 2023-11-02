@@ -17,10 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from video import workers
+
 urlpatterns = [
     path("api/", include([
         path('admin/', admin.site.urls, name='admin'),
         path('auth/', include('authentication.urls'), name='authentication'),
         path('video/', include('video.urls'), name='video'),
+    ])),
+    path("internal/", include([
+        path("check-queue/", workers.UpdateProcessedVideoInDBView.as_view(), name="Check Queue"),
     ]))
 ]
