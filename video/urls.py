@@ -31,5 +31,5 @@ urlpatterns += [
     path("comment/", comment.PostComment.as_view(), name="Post Comment"), # WIP
 
     path("like/", like.LikeVideo.as_view(), name="Like Video"), # WIP
+    path("update-db/", worker.PutVideoInDB.as_view(), name="Update DB"),
 ]
-
