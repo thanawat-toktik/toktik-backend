@@ -53,8 +53,8 @@ class VideoViewSet(viewsets.ViewSet):
         # data = self.queryset.filter(status='done').order_by('-view')
         data = self.queryset.filter(status='done').order_by('-view')
         serializer = self.serializer_class(data=data, many=True)
-        serializer.is_valid()  # don't actually need to check if valid
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        serializer.is_valid()  # dont actually need to check if valid
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     # TODO: add pagination
     @action(detail=False, methods=['GET'], url_path='my-video')
@@ -63,11 +63,14 @@ class VideoViewSet(viewsets.ViewSet):
         data = self.queryset.filter(uploader_id=user_id).order_by('-upload_timestamp')
         serializer = self.serializer_class(data=data, many=True)
         serializer.is_valid()
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['PATCH'], url_path='view')
-    def increment_view(self, _):
-        return Response(data={"message": "View Increment not yet implemented"}, status=status.HTTP_200_OK)
+    @action(detail=True, methods=['GET'], url_path='view')
+    def increment_view(self, _, pk=None):
+        video = self.queryset.get(id=pk)
+        video.view += 1
+        video.save()
+        return Response(status=status.HTTP_200_OK)
 
 
 class GetPresignedPlaylistView(GenericAPIView):
@@ -96,12 +99,12 @@ class GetPresignedPlaylistView(GenericAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # video id validation
-        video = self.queryset.filter(id=video_id).first()
+        video = self.queryset.get(id=video_id)
         if not video:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         try:
-            file_name, extension = os.path.splitext(video.s3_key)
+            file_name, _ = os.path.splitext(video.s3_key)
             playlist_dir = Path("/tmp/" + file_name)
             if not playlist_dir.exists():
                 os.mkdir(playlist_dir)
@@ -140,10 +143,7 @@ class GetPresignedURLView(GenericAPIView):
         if not videos:  # no match
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        urls = {
-            "video_ids": [],
-            "urls": []
-        }
+        id_url_map = dict()
         try:
             for video in videos:
                 identifier, original_ext = os.path.splitext(video.s3_key)
@@ -155,9 +155,12 @@ class GetPresignedURLView(GenericAPIView):
                     },
                     ExpiresIn=300
                 )
-                urls["video_ids"].append(video.id)
-                urls["urls"].append(url)
-
+                id_url_map[video.id] = url
+            
+            urls = {
+                "video_ids": ids,
+                "urls": [id_url_map.get(int(id), '') for id in ids]
+            }
             return Response(data=urls, status=status.HTTP_200_OK)
 
         except Exception as e:
