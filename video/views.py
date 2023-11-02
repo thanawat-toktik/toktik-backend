@@ -6,6 +6,7 @@ from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 
 import boto3
 from botocore.client import Config
@@ -43,20 +44,17 @@ def get_s3_client():
 
 # https://stackoverflow.com/questions/21508982/add-custom-route-to-viewsets-modelviewset
 class VideoViewSet(viewsets.ViewSet):
-    queryset = Video.objects.all()  # -view --> descending view
-    # permission_classes = [IsAuthenticated,]
+    queryset = Video.objects.all()
+    permission_classes = [IsAuthenticated,]
     serializer_class = GeneralVideoSerializer
 
-    # TODO: add pagination
     @action(detail=False, methods=['GET'])
     def feed(self, _):
-        # data = self.queryset.filter(status='done').order_by('-view')
         data = self.queryset.filter(status='done').order_by('-view')
         serializer = self.serializer_class(data=data, many=True)
         serializer.is_valid()  # dont actually need to check if valid
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    # TODO: add pagination
     @action(detail=False, methods=['GET'], url_path='my-video')
     def my_video(self, request):
         user_id = request.user.id
@@ -75,6 +73,7 @@ class VideoViewSet(viewsets.ViewSet):
 
 class GetPresignedPlaylistView(GenericAPIView):
     queryset = Video.objects.all()
+    permission_classes = [IsAuthenticated,]
 
     @staticmethod
     def pre_sign_playlist(playlist_file: Path, file_name: str):
@@ -129,6 +128,7 @@ class GetPresignedPlaylistView(GenericAPIView):
 
 class GetPresignedURLView(GenericAPIView):
     queryset = Video.objects.all()
+    permission_classes = [IsAuthenticated,]
 
     def post(self, request):
         # payload validation
@@ -138,7 +138,6 @@ class GetPresignedURLView(GenericAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         # video id validation
-        print(ids)
         videos = self.queryset.filter(id__in=ids)  # currently, the ids are str, but it works
         if not videos:  # no match
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -169,9 +168,7 @@ class GetPresignedURLView(GenericAPIView):
 
 
 class UploadPresignedURLView(GenericAPIView):
-    permission_classes = [
-        # IsAuthenticated,
-    ]
+    permission_classes = [IsAuthenticated,]
 
     def post(self, request):
         load_dotenv()

@@ -3,6 +3,7 @@ import os
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import IsAuthenticated
 
 from celery import Celery
 
@@ -52,7 +53,7 @@ class PutVideoInDB(GenericAPIView):
     serializer_class = CreateVideoSerializer
 
     permission_classes = [
-        # IsAuthenticated,
+        IsAuthenticated,
     ]
 
     def post(self, request):
@@ -73,10 +74,6 @@ class PutVideoInDB(GenericAPIView):
 # - sets flags to true according to status
 # - sends a message to msg queue
 def update_video(video: Video, task_result: bool, step: int):
-    # print("before")
-    # print(step)
-    # print(task_result)
-    # print(video.__dict__)
 
     if not task_result:  # if something fails
         if ("processing" in video.status):
@@ -96,9 +93,6 @@ def update_video(video: Video, task_result: bool, step: int):
             video.hasThumbnail = True
             video.status = "done"
     video.save()
-
-    # print("after")
-    # print(video.__dict__)
 
 
 class UpdateProcessedVideoInDBView(GenericAPIView):
