@@ -5,6 +5,7 @@ from rest_framework import serializers
 from video.models import Like
 from video.models import Video
 
+
 class CreateLikeSerializer(serializers.Serializer):
     video_id = serializers.IntegerField()
 
@@ -20,7 +21,7 @@ class CreateLikeSerializer(serializers.Serializer):
             )
 
         return super().validate(attrs)
-    
+
     def set_user(self, user):
         self.user = user
 
@@ -32,6 +33,6 @@ class CreateLikeSerializer(serializers.Serializer):
         )
         if not created:
             obj.is_liked = not obj.is_liked
-        
+
         obj.save()
         return obj

@@ -16,7 +16,8 @@ class GeneralCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ["id", "user", "video", "created_at", "content",]
+        fields = ["id", "user", "video", "created_at", "content", ]
+
 
 class CreateCommentSerializer(serializers.Serializer):
     content = serializers.CharField(max_length=200, allow_blank=False)
@@ -24,7 +25,7 @@ class CreateCommentSerializer(serializers.Serializer):
 
     class Meta:
         fields = ["content", "video_id"]
-    
+
     def validate(self, attrs):
         video = Video.objects.get(id=attrs.get("video_id"))
         if not video:
@@ -43,4 +44,3 @@ class CreateCommentSerializer(serializers.Serializer):
         new_comment.user = self.user
         new_comment.save()
         return new_comment
-    

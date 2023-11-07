@@ -5,9 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 
 from video.serializers.like_serializers import CreateLikeSerializer
 
+
 class LikeVideo(GenericAPIView):
     serializer_class = CreateLikeSerializer
-    permission_classes = [IsAuthenticated,]
+    permission_classes = [IsAuthenticated, ]
 
     def post(self, request):
         data = request.data
@@ -17,6 +18,6 @@ class LikeVideo(GenericAPIView):
             serializer.set_user(request.user)
             serializer.save()
             # TODO: should send notification here
-            return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)

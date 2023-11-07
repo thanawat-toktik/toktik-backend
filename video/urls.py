@@ -16,7 +16,7 @@ router.register('', video.VideoViewSet)
 urlpatterns += router.urls
 urlpatterns += [
     path("get-counts/", video.GetVideoStatistics.as_view(), name="Get Statistics"),
-    
+
     path("update-db/", worker.PutVideoInDB.as_view(), name="Update DB"),
     path("check-queue/", worker.UpdateProcessedVideoInDBView.as_view(), name="Check Queue"),
 
@@ -28,8 +28,8 @@ urlpatterns += [
     path("get-url/", psu.GetPresignedURLView.as_view(), name="Generate view pre-signed url"),
     path("get-playlist/", psu.GetPresignedPlaylistView.as_view(), name="Generate playlist pre-signed url"),
 
-    path("comment/", comment.PostComment.as_view(), name="Post Comment"), # WIP
+    path("comment/", comment.PostComment.as_view(), name="Post Comment"),  # WIP
 
-    path("like/", like.LikeVideo.as_view(), name="Like Video"), # WIP
+    path("like/", like.LikeVideo.as_view(), name="Like Video"),  # WIP
     path("update-db/", worker.PutVideoInDB.as_view(), name="Update DB"),
 ]

@@ -18,6 +18,7 @@ class Video(models.Model):
     hasThumbnail = models.BooleanField(default=False)
     status = models.CharField(max_length=50, default="processing")
 
+
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
@@ -26,10 +27,11 @@ class Comment(models.Model):
 
     content = models.CharField(max_length=200, blank=True, default="")
 
+
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="likes")
     video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name="likes")
-    is_liked = models.BooleanField(default=False)
+    isLiked = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("user_id", "video_id",)
