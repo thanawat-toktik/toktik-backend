@@ -1,11 +1,20 @@
 from django.forms import ValidationError
 from rest_framework import status
 from rest_framework import serializers
-from authentication.serializers import BasicUserInfoSerializer
 
 from video.models import Video
-from rest_framework import serializers
+from authentication.serializers import BasicUserInfoSerializer
 
+
+class BasicVideoSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    uploader = BasicUserInfoSerializer(read_only=True, many=False)
+    upload_timestamp = serializers.DateTimeField()
+    title = serializers.CharField(max_length=50, allow_blank=False)
+
+    class Meta:
+        model = Video
+        fields = ['id', 'uploader', 'upload_timestamp', 'title',]
 
 class GeneralVideoSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()

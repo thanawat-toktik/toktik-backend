@@ -9,7 +9,7 @@ from celery import Celery
 
 from dotenv import load_dotenv
 
-from video.serializers import CreateVideoSerializer
+from video.serializers.video_serializers import CreateVideoSerializer
 from video.models import Video
 
 

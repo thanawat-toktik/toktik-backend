@@ -2,10 +2,9 @@ import os
 import shutil
 from pathlib import Path
 
-from rest_framework import status, viewsets
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
 import boto3
@@ -15,7 +14,6 @@ from dotenv import load_dotenv
 
 import m3u8
 
-from video.serializers import GeneralVideoSerializer
 from video.models import Video
 
 BUCKET_NAMES = {
@@ -30,7 +28,6 @@ FILE_EXTENSION = {
     "thumbnail": ".jpg"
 }
 
-
 def get_s3_client():
     return boto3.client(
         "s3",
@@ -40,36 +37,6 @@ def get_s3_client():
         aws_secret_access_key=os.environ.get("S3_SECRET_ACCESS_KEY"),
         config=Config(s3={"addressing_style": "virtual"}, signature_version="v4"),
     )
-
-
-# https://stackoverflow.com/questions/21508982/add-custom-route-to-viewsets-modelviewset
-class VideoViewSet(viewsets.ViewSet):
-    queryset = Video.objects.all()
-    permission_classes = [IsAuthenticated,]
-    serializer_class = GeneralVideoSerializer
-
-    @action(detail=False, methods=['GET'])
-    def feed(self, _):
-        data = self.queryset.filter(status='done').order_by('-view')
-        serializer = self.serializer_class(data=data, many=True)
-        serializer.is_valid()  # dont actually need to check if valid
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['GET'], url_path='my-video')
-    def my_video(self, request):
-        user_id = request.user.id
-        data = self.queryset.filter(uploader_id=user_id).order_by('-upload_timestamp')
-        serializer = self.serializer_class(data=data, many=True)
-        serializer.is_valid()
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['GET'], url_path='view')
-    def increment_view(self, _, pk=None):
-        video = self.queryset.get(id=pk)
-        video.view += 1
-        video.save()
-        return Response(status=status.HTTP_200_OK)
-
 
 class GetPresignedPlaylistView(GenericAPIView):
     queryset = Video.objects.all()
