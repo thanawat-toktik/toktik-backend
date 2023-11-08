@@ -47,10 +47,10 @@ class GetPresignedPlaylistView(GenericAPIView):
         playlist = m3u8.load(str(playlist_file))
         for segment in playlist.segments:
             segment.uri = get_s3_client().generate_presigned_url(
-                ClientMethod='get_object',
+                ClientMethod="get_object",
                 Params={
-                    'Bucket': BUCKET_NAMES["chunked"],
-                    'Key': f"{file_name}/{segment.uri}",
+                    "Bucket": BUCKET_NAMES["chunked"],
+                    "Key": f"{file_name}/{segment.uri}",
                 },
                 ExpiresIn=120  # expires in 2 minutes
             )
@@ -60,7 +60,7 @@ class GetPresignedPlaylistView(GenericAPIView):
         load_dotenv()
 
         # payload validation
-        video_id = request.query_params.get('video_id', None)
+        video_id = request.query_params.get("video_id", None)
         if not video_id:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -90,7 +90,7 @@ class GetPresignedPlaylistView(GenericAPIView):
 
         except Exception as e:
             print(e)
-            return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(data={"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class GetPresignedURLView(GenericAPIView):
@@ -99,11 +99,14 @@ class GetPresignedURLView(GenericAPIView):
 
     def post(self, request):
         # payload validation
-        target_bucket = request.data.get('bucket', None)
-        ids = request.data.get('video_ids').split(',')
+        target_bucket = request.data.get("bucket", None)
+        ids = request.data.get("video_ids")
         if not target_bucket or not ids:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        if isinstance( ids, str ):
+            ids = ids.split(',')
+            
         # video id validation
         videos = self.queryset.filter(id__in=ids)  # currently, the ids are str, but it works
         if not videos:  # no match
@@ -114,10 +117,10 @@ class GetPresignedURLView(GenericAPIView):
             for video in videos:
                 identifier, original_ext = os.path.splitext(video.s3_key)
                 url = get_s3_client().generate_presigned_url(
-                    ClientMethod='get_object',
+                    ClientMethod="get_object",
                     Params={
-                        'Bucket': BUCKET_NAMES.get(target_bucket),
-                        'Key': identifier + FILE_EXTENSION.get(target_bucket, f".{original_ext}")
+                        "Bucket": BUCKET_NAMES.get(target_bucket),
+                        "Key": identifier + FILE_EXTENSION.get(target_bucket, f".{original_ext}")
                     },
                     ExpiresIn=300
                 )
@@ -125,13 +128,13 @@ class GetPresignedURLView(GenericAPIView):
             
             urls = {
                 "video_ids": ids,
-                "urls": [id_url_map.get(int(id), '') for id in ids]
+                "urls": [id_url_map.get(int(id), "") for id in ids]
             }
             return Response(data=urls, status=status.HTTP_200_OK)
 
         except Exception as e:
             print(e)
-            return Response(data={'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(data={"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UploadPresignedURLView(GenericAPIView):

@@ -36,16 +36,27 @@ class VideoViewSet(viewsets.ViewSet):
         video.save()
         return Response(status=status.HTTP_200_OK)
 
+from rest_framework import serializers
+class TempSerializer(serializers.Serializer):
+    video_ids = serializers.ListField(
+        child=serializers.IntegerField()
+    )
+
 
 class GetVideoStatistics(GenericAPIView):
-    queryset = Video.objects.select_related('comments', 'likes').all() # this will pre-join the tables
+    # https://stackoverflow.com/questions/31237042/whats-the-difference-between-select-related-and-prefetch-related-in-django-orm
+    queryset = Video.objects.prefetch_related('comments', 'likes').all() # this will pre-join the tables
     permission_classes = [IsAuthenticated,]
+    serializer_class = TempSerializer
 
     def post(self, request):
         # payload validation
-        ids = request.data.get('video_ids').split(',')
+        ids = request.data.get('video_ids')
         if not ids:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        if isinstance( ids, str ):
+            ids = ids.split(',')
 
         # video id validation
         videos = self.queryset.filter(id__in=ids)  # currently, the ids are str, but it works
@@ -57,7 +68,7 @@ class GetVideoStatistics(GenericAPIView):
             for video in videos:
                 statistics = {
                     "views": video.view,
-                    "likes": video.likes.filter(isLiked=True).count(),
+                    "likes": video.likes.filter(is_liked=True).count(),
                     "comment": video.comments.all().count()
                 }
                 
