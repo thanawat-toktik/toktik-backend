@@ -29,7 +29,7 @@ class Comment(models.Model):
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="likes")
     video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name="likes")
-    isLiked = models.BooleanField(default=False)
+    is_liked = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("user_id", "video_id",)

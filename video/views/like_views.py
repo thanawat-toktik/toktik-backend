@@ -17,6 +17,6 @@ class LikeVideo(GenericAPIView):
             serializer.set_user(request.user)
             serializer.save()
             # TODO: should send notification here
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
