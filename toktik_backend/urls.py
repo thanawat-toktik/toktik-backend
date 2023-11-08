@@ -28,5 +28,6 @@ urlpatterns = [
     ])),
     path("internal/", include([
         path("check-queue/", workers.UpdateProcessedVideoInDBView.as_view(), name="Check Queue"),
+        path('notification/', include('notification.urls'), name='notification'),
     ]))
 ]
