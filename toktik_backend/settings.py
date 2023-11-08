@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     # My apps
     "authentication.apps.AuthenticationConfig",
     "video.apps.VideoConfig",
+    "notification.apps.NotificationConfig",
 ]
 
 MIDDLEWARE = [
