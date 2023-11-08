@@ -22,5 +22,6 @@ urlpatterns = [
         path('admin/', admin.site.urls, name='admin'),
         path('auth/', include('authentication.urls'), name='authentication'),
         path('video/', include('video.urls'), name='video'),
+        path('notification/', include('notification.urls'), name='notification'),
     ]))
 ]
