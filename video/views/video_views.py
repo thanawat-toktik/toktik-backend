@@ -37,18 +37,10 @@ class VideoViewSet(viewsets.ViewSet):
         video.save()
         return Response(status=status.HTTP_200_OK)
 
-
-class TempSerializer(serializers.Serializer):
-    video_ids = serializers.ListField(
-        child=serializers.IntegerField()
-    )
-
-
 class GetVideoStatistics(GenericAPIView):
     # https://stackoverflow.com/questions/31237042/whats-the-difference-between-select-related-and-prefetch-related-in-django-orm
     queryset = Video.objects.prefetch_related('comments', 'likes').all()  # this will pre-join the tables
     permission_classes = [IsAuthenticated, ]
-    serializer_class = TempSerializer
 
     def post(self, request):
         # payload validation
