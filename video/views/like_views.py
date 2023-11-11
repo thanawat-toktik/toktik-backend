@@ -4,7 +4,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from video.serializers.like_serializers import CreateLikeSerializer
-
+from utils.redis_util import publish_message_to_wss
 
 class LikeVideo(GenericAPIView):
     serializer_class = CreateLikeSerializer
@@ -17,7 +17,8 @@ class LikeVideo(GenericAPIView):
         if serializer.is_valid():
             serializer.set_user(request.user)
             serializer.save()
-            # TODO: should send notification here
+            #TODO: make a valid notification payload
+            publish_message_to_wss("WSS-notif", { "message": "hello" })
             return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)

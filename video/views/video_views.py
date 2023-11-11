@@ -61,7 +61,7 @@ class GetVideoStatistics(GenericAPIView):
             for video in videos:
                 statistics = {
                     "views": video.view,
-                    "likes": video.likes.filter(isLiked=True).count(),
+                    "likes": video.likes.filter(is_liked=True).count(),
                     "comment": video.comments.all().count()
                 }
 
