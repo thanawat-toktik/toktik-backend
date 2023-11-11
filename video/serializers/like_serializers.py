@@ -23,6 +23,8 @@ class CreateLikeSerializer(serializers.Serializer):
         return super().validate(attrs)
 
     def set_user(self, user):
+        # from authentication.models import User
+        # user = User.objects.get(id=2)
         self.user = user
 
     def create(self, validated_data):
