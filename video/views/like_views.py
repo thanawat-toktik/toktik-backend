@@ -8,6 +8,7 @@ from notification.models import Notification
 from notification.views import create_notification
 from utils.redis_util import publish_message_to_wss
 from video.models import Like
+from utils.redis_util import publish_message_to_wss
 
 
 class LikeVideo(GenericAPIView):
@@ -34,7 +35,9 @@ class LikeVideo(GenericAPIView):
         if serializer.is_valid():
             serializer.set_user(request.user)
             serializer.save()
+            # TODO: make a valid notification payload
             create_notification("like", request.user, serializer.video_id)
+            publish_message_to_wss("WSS-notif", {"message": "hello"})
             return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
