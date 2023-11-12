@@ -49,5 +49,6 @@ class CreateUserSerializer(serializers.ModelSerializer):
 class CustomObtainTokenSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        data['username'] = self.user.username
+        data["username"] = self.user.username
+        data["user_id"] = self.user.id
         return data
