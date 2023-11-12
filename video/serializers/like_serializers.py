@@ -31,10 +31,10 @@ class CreateLikeSerializer(serializers.Serializer):
         obj, created = Like.objects.get_or_create(
             user=self.user,
             video_id=validated_data.get("video_id"),
-            defaults={"isLiked": True}
+            defaults={"is_liked": True}
         )
         if not created:
-            obj.isLiked = not obj.isLiked
+            obj.is_liked = not obj.is_liked
 
         obj.save()
         return obj

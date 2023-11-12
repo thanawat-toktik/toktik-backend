@@ -4,11 +4,8 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from video.serializers.like_serializers import CreateLikeSerializer
-from notification.models import Notification
 from notification.views import create_notification
-from utils.redis_util import publish_message_to_wss
 from video.models import Like
-from utils.redis_util import publish_message_to_wss
 
 
 class LikeVideo(GenericAPIView):
@@ -22,7 +19,7 @@ class LikeVideo(GenericAPIView):
         if video_id is None:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"message": "videoId not provided"})
         try:
-            liked_by = Like.objects.filter(video=video_id, isLiked=True).all()
+            liked_by = Like.objects.filter(video=video_id, is_liked=True).all()
             return Response(status=status.HTTP_200_OK,
                             data={"isLiked": liked_by.filter(user=user_id).exists(), "likeCount": liked_by.count()})
         except Like.DoesNotExist:
@@ -34,10 +31,9 @@ class LikeVideo(GenericAPIView):
 
         if serializer.is_valid():
             serializer.set_user(request.user)
+            print(serializer)
             serializer.save()
-            # TODO: make a valid notification payload
-            create_notification("like", request.user, serializer.video_id)
-            publish_message_to_wss("WSS-notif", {"message": "hello"})
+            create_notification("like", request.user, serializer.data.get("video_id"))
             return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)

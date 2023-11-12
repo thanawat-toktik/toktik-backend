@@ -1,11 +1,12 @@
 from redis import Redis
 import os
-import json 
+import json
 
 VALID_CHANNEL = [
     "WSS-notif",
     "WSS-comment",
 ]
+
 
 def get_redis_connection():
     return Redis(
@@ -14,12 +15,13 @@ def get_redis_connection():
         # db=os.environ.get('REDIS_DB', '0')
     )
 
+
 def publish_message_to_wss(channel, data):
     if channel not in VALID_CHANNEL:
         raise ValueError("Invalid channel name")
-    
+
     if isinstance(data, dict):
-        data = json.dumps(data) 
+        data = json.dumps(data)
     connection = get_redis_connection()
     connection.publish(channel, data)
     return "ok"

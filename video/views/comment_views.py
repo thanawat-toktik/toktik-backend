@@ -29,7 +29,7 @@ class PostComment(GenericAPIView):
         if serializer.is_valid():
             serializer.set_user(request.user)
             serializer.save()
-            create_notification("comment", request.user, serializer.video_id)
+            create_notification("comment", request.user, serializer.data.get("video_id"))
             # TODO: send comment update to FE through WSS
             return Response(status=status.HTTP_201_CREATED)
         else:
