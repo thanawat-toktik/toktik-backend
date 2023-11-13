@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from video.models import Comment
 from video.serializers.comment_serializers import CreateCommentSerializer
+from notification.views import create_notification
+
 
 
 class PostComment(GenericAPIView):
@@ -28,7 +30,8 @@ class PostComment(GenericAPIView):
         if serializer.is_valid():
             serializer.set_user(request.user)
             serializer.save()
-            # TODO: should send notification here
+            create_notification("comment", request.user, serializer.data.get("video_id"))
+            # TODO: send comment update to FE through WSS
             return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)

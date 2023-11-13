@@ -11,13 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 from pathlib import Path
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
-
-load_dotenv()
 
 load_dotenv()
 

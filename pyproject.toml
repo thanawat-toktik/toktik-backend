@@ -22,6 +22,7 @@ python-dotenv = "^1.0.0"
 celery = "^5.3.4"
 redis = "^5.0.1"
 m3u8 = "^3.6.0"
+setuptools = "^68.2.2"
 
 
 [build-system]

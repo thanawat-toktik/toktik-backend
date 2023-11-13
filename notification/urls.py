@@ -1,8 +1,7 @@
 from django.urls import path
 
-from rest_framework.routers import DefaultRouter
+from .views import FetchNotifications
 
 urlpatterns = [
-    # path("like/", like.LikeVideo.as_view(), name="Like Video"),
+    path("fetch/", FetchNotifications.as_view(), name="Fetch notifications"),
 ]
-
