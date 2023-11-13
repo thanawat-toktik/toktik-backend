@@ -1,4 +1,9 @@
 from django.utils import timezone
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 from authentication.models import User
 
 from notification.models import Notification
@@ -31,3 +36,16 @@ def create_notification(notification_type: str, sender: User, video_id: int):
     }
     # send the payload
     publish_message_to_wss("WSS-notif", payload)
+
+
+class FetchNotifications(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = request.user.id
+        notifications = Notification.objects.filter(receiver_id=user_id)[:10]
+        notifications = [{
+            "message": generate_notification_message(notif.sender, notif.notification_type, notif.video.title),
+            "timestamp": notif.timestamp,
+        } for notif in notifications]
+        return Response(status=status.HTTP_200_OK, data=notifications)

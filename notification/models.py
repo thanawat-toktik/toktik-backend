@@ -5,9 +5,10 @@ from video.models import Video
 
 NOTIFICATION_TYPE = ["like", "comment"]
 NOTIFICATION_MESSAGE = {
-    NOTIFICATION_TYPE[0]: "likes the video", 
+    NOTIFICATION_TYPE[0]: "likes the video",
     NOTIFICATION_TYPE[1]: "commented on the video"
 }
+
 
 class Notification(models.Model):
     id = models.AutoField(primary_key=True)
