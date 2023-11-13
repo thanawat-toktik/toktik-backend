@@ -28,7 +28,7 @@ urlpatterns += [
     path("get-url/", psu.GetPresignedURLView.as_view(), name="Generate view pre-signed url"),
     path("get-playlist/", psu.GetPresignedPlaylistView.as_view(), name="Generate playlist pre-signed url"),
 
-    path("comment/", comment.PostComment.as_view(), name="Post Comment"),  # WIP
+    path("comment/", comment.CommentView.as_view(), name="Comments"),
 
-    path("like/", like.LikeVideo.as_view(), name="Like Video"),  # WIP
+    path("like/", like.LikeView.as_view(), name="Like Video"),
 ]
