@@ -43,7 +43,7 @@ class FetchNotifications(GenericAPIView):
 
     def get(self, request):
         user_id = request.user.id
-        notifications = Notification.objects.filter(receiver_id=user_id)[:10]
+        notifications = Notification.objects.filter(receiver_id=user_id).order_by("-timestamp")[:5]
         notifications = [{
             "message": generate_notification_message(notif.sender, notif.notification_type, notif.video.title),
             "timestamp": notif.timestamp,
