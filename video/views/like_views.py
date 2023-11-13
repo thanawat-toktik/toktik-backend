@@ -31,7 +31,7 @@ class LikeVideo(GenericAPIView):
         if video_id is None:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"message": "videoId not provided"})
         try:
-            liked_by = Like.objects.filter(video=video_id, isLiked=True).all()
+            liked_by = Like.objects.filter(video=video_id, is_liked=True).all()
             return Response(status=status.HTTP_200_OK,
                             data={"isLiked": liked_by.filter(user=user_id).exists(), "likeCount": liked_by.count()})
         except Like.DoesNotExist:
