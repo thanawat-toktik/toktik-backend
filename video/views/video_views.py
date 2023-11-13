@@ -37,6 +37,7 @@ class VideoViewSet(viewsets.ViewSet):
         video.save()
         return Response(status=status.HTTP_200_OK)
 
+
 class GetVideoStatistics(GenericAPIView):
     # https://stackoverflow.com/questions/31237042/whats-the-difference-between-select-related-and-prefetch-related-in-django-orm
     queryset = Video.objects.prefetch_related('comments', 'likes').all()  # this will pre-join the tables
@@ -59,10 +60,13 @@ class GetVideoStatistics(GenericAPIView):
         id_stats_map = dict()  # { id: { statistic dict } }
         try:
             for video in videos:
+                liked_by = video.likes.filter(is_liked=True)
+                you_liked = liked_by.filter(user=request.user)
                 statistics = {
                     "views": video.view,
-                    "likes": video.likes.filter(is_liked=True).count(),
-                    "comment": video.comments.all().count()
+                    "likes": liked_by.count(),
+                    "comment": video.comments.all().count(),
+                    "isLiked": you_liked.exists() and you_liked.first().is_liked,
                 }
 
                 id_stats_map[video.id] = statistics
