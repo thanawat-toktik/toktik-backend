@@ -1,4 +1,6 @@
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -41,6 +43,7 @@ def create_notification(notification_type: str, sender: User, video_id: int):
 class FetchNotifications(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(cache_page(5))
     def get(self, request):
         user_id = request.user.id
         notifications = Notification.objects.filter(receiver_id=user_id).order_by("-timestamp")[:5]
