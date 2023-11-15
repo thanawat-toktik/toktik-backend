@@ -2,14 +2,14 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from utils.redis_util import publish_message_to_wss
 
 from video.models import Comment
 from video.serializers.comment_serializers import CreateCommentSerializer
 from notification.views import create_notification
 
 
-
-class PostComment(GenericAPIView):
+class CommentView(GenericAPIView):
     serializer_class = CreateCommentSerializer
     permission_classes = [IsAuthenticated, ]
 
@@ -31,7 +31,14 @@ class PostComment(GenericAPIView):
             serializer.set_user(request.user)
             serializer.save()
             create_notification("comment", request.user, serializer.data.get("video_id"))
-            # TODO: send comment update to FE through WSS
+
+            comment_payload = {
+                "user": request.user.username,
+                "user_id": request.user.id,
+                "content": serializer.data.get("content"),
+                "video_id": serializer.data.get("video_id"),
+            }
+            publish_message_to_wss("WSS-comment", comment_payload)
             return Response(status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)

@@ -8,7 +8,7 @@ from notification.views import create_notification
 from video.models import Like
 
 
-class LikeVideo(GenericAPIView):
+class LikeView(GenericAPIView):
     serializer_class = CreateLikeSerializer
     permission_classes = [IsAuthenticated, ]
 
