@@ -1,9 +1,11 @@
 from rest_framework import status, viewsets
-from rest_framework import serializers
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
 from video.serializers.video_serializers import GeneralVideoSerializer
 from video.models import Video
@@ -43,9 +45,11 @@ class GetVideoStatistics(GenericAPIView):
     queryset = Video.objects.prefetch_related('comments', 'likes').all()  # this will pre-join the tables
     permission_classes = [IsAuthenticated, ]
 
-    def post(self, request):
+    @method_decorator(cache_page(5))
+    def get(self, request: Request):
         # payload validation
-        ids = request.data.get('video_ids')
+        ids = request.query_params.get("video_ids", None).split(",")
+        ids = [int(vid_id) for vid_id in ids]
         if not ids:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
