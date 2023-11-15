@@ -10,6 +10,7 @@ ENV POETRY_VERSION=1.6.1
 RUN pip install poetry==${POETRY_VERSION} && poetry install --no-root --no-directory
 COPY toktik_backend/ ./toktik_backend/
 COPY authentication/ ./authentication/
+COPY notification/ ./notification/
 COPY video/ ./video/
 RUN poetry install --only main
 
