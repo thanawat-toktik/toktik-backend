@@ -48,13 +48,13 @@ class GetVideoStatistics(GenericAPIView):
     @method_decorator(cache_page(5))
     def get(self, request: Request):
         # payload validation
-        ids = request.query_params.get("video_ids", None).split(",")
-        ids = [int(vid_id) for vid_id in ids]
+        ids = request.query_params.get("video_ids", None)
         if not ids:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         if isinstance(ids, str):
             ids = ids.split(',')
+            ids = [int(vid_id) for vid_id in ids]
 
         # video id validation
         videos = self.queryset.filter(id__in=ids)  # currently, the ids are str, but it works
