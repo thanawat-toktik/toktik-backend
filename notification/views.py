@@ -19,15 +19,16 @@ def create_notification(notification_type: str, sender: User, video_id: int):
     # store them in DB for each receiver
     new_notification_ids = []
     for user_id in involved_users:
-        new_notification = Notification.objects.create(
-            notification_type=notification_type,
-            sender_id=sender.id,
-            receiver_id=user_id,
-            video_id=video_id,
-            timestamp=timestamp,
-        )
-        new_notification.save()
-        new_notification_ids.append(new_notification.id)
+        if sender.id != user_id:
+            new_notification = Notification.objects.create(
+                notification_type=notification_type,
+                sender_id=sender.id,
+                receiver_id=user_id,
+                video_id=video_id,
+                timestamp=timestamp,
+            )
+            new_notification.save()
+            new_notification_ids.append(new_notification.id)
 
     # generate notif payload for WS server
     payload = {
